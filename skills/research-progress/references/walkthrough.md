@@ -77,3 +77,9 @@
 2. **不许预测实验结果**。例一中凭推演预告失败，被实测打脸。
 3. **先算数据，再谈方法**。例三最有决定性的动作是花几小时算数据集碰撞率，不是设计方法。
 4. **重新提法是真进展**。例二的混杂分型、例三的"脏数据 + 物理裁判"——提法变了，方向才立住。
+
+## 新增方法论在现有案例中的对应关系
+
+- CRA：体现 attribution discipline 与机制隔离。
+- CMCRL：体现 implementation closure 与 hypothesis refinement。
+- PhyScene3D：体现 technique-is-not-a-problem、reframing 与先算数据。

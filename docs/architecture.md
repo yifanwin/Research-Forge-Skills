@@ -110,3 +110,7 @@ last_updated: "2026-08-31"
 - `experiment-manager` 决定是否保留该产物并验收其嵌入。
 
 按需叠加：基础层 + 1–2 个技能即可。图只在显著改善解释时才绘制，但"是否需要图"的判断必须显式做出并记录。
+
+## Idea 收敛增强
+
+`research-progress` 依次收敛核心主张/贡献形态、价值、相关工作、hard gate、实现链、贡献塑形与决策证据。Hard contradiction、Repairable blocker、Research risk 分别对应否决/卡住/进入猜想清单；实验仍由 `experiment-manager` 执行。

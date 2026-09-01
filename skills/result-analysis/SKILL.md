@@ -149,3 +149,7 @@ description: >-
 ## Related skills
 
 兄弟 Skill 可用时委托其职责；不可用时在本 Skill 内执行必要协议，不因缺失而中止。研究状态布局和生命周期以 `research-manager` 为准。
+
+## Attribution check
+
+正向结果先检查机制是否被 isolating evidence 隔离。完整系统涨点不能抵消核心机制被直接反驳；必要时将原 hypothesis 标记证伪并要求新预测。

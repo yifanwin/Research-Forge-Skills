@@ -142,3 +142,7 @@ description: >-
 ## Related skills
 
 兄弟 Skill 可用时委托其职责；不可用时在本 Skill 内执行必要协议，不因缺失而中止。研究状态布局和生命周期以 `research-manager` 为准。
+
+## Proposal intake
+
+执行前的 proposal 应包含核心 claim、Primary/Secondary contribution axis、冻结 hypothesis、可证伪 prediction、attribution 风险和最小决策实验；缺失时退回 `research-progress` 收敛。
