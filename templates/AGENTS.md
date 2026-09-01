@@ -57,3 +57,9 @@
 - 先说结论，再给依据和下一步；不复述收尾。
 - 外部事实附来源；不确定的写"尚未验证"或"我推测"。
 - 一段能说清就不用表格；独立要点用列表；只有横向比较才用表格。
+
+## Literature Inputs (optional)
+
+- 用户显式提供的论文属于 priority anchor literature；Anchor 决定阅读和检索优先级，不决定证据可信度。
+- 本地论文路径由 knowledge-keeper 建立索引，不要求进入 Git。
+- Research gap 判断前必须处理当前方向相关的 anchor papers。

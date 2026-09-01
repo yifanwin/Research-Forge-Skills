@@ -3,20 +3,15 @@ name: research-progress
 description: >-
   Research idea convergence advisor. Load when the user proposes a new research direction, asks "is this idea worth pursuing", requests literature search / gap analysis, or needs stop criteria for a study. Grounds ideas in reality — implementation closure, related-work facts, speculation tracking, decision-driven experiments — before any formal experiment design. Experiment execution itself belongs to experiment-manager.
 ---
-
 ## Output Contract
-
 - 先说结论，再给必要依据和下一步。
 - 默认短句和常用词；术语只在更准确时用，首次出现直接解释。
 - 内部状态、流程和检查表默认不展示；只有影响决定或用户明确要求时才展开。
 - 外部事实、论文结论和数字附来源；不确定的直接写"尚未验证"或"我推测"，不给每句话机械加事实/猜测标签。
 - 一段能说清就不用表格；独立要点用列表；只有横向比较才用表格。
 - 不写套话、廉价肯定、重复总结和固定收尾。
-
 # Research Progress — 先落地现实，再决定验证什么
-
 先查清现实，再决定什么值得验证。内部顺序为：核心主张与贡献形态 → 实际价值 → related-work reality → hard gate → implementation closure → contribution shaping → reframing probe → guess register → cheapest decision evidence。默认输出保持简洁。详细规则见 `references/idea-gates.md` 与 `references/contribution-shaping.md`。不许从抽象概念直接跳到实验设计。
-
 ## 1. 先分清大小问题
 
 - **小问题**：现有知识或一次查证就能答，最多影响一个局部决定（用哪个工具、哪个参数、这篇论文讲了什么）→ 直接答，不启动下面的流程。
@@ -134,20 +129,22 @@ input → obtainable data/signals → concrete modules → tensors/structures pa
 
 ## 10. 默认输出
 
-每次讨论默认输出八项：结论（否决/卡住/评估中/通过）、核心主张、实际价值、相关工作现实、实现链/当前 blocker、主要贡献轴（Primary/Secondary）、最大猜想、下一项决策证据。不要输出分数。现实条件没查清之前，不生成实验矩阵和"可以试试"清单。评估写入 `proposal/NN-slug/experiment-plan.md`。一个方向完整走过四步、六项填好的实例：`references/walkthrough.md`。
+每次讨论默认输出八项：结论（否决/卡住/评估中/通过）、核心主张、实际价值、相关工作现实、实现链/当前 blocker、主要贡献轴（Primary/Secondary）、最大猜想、下一项决策证据。现实条件没查清之前，不生成实验矩阵和"可以试试"清单。评估写入 `proposal/NN-slug/experiment-plan.md`。一个方向完整走过四步、六项填好的实例：`references/walkthrough.md`。
 
 ## 11. 交接与约束
 
 `通过`的提案交给 `experiment-manager`。文献证据只来自 `knowledge-keeper`，不许编造论文。写文件前先经用户确认。只有发现具体的过时或重复内容才提议清理。
 
-
 ## Capability check
 
 独立复核能力阶梯：优先使用新上下文的独立审阅，其次使用隔离的辅助上下文，再退化为同一上下文的第二遍检查；最后一种情况必须披露未完成独立验证。
-
 
 按宿主当前能力选择最佳执行路径：优先使用原生文件/搜索/绘图或独立上下文能力，其次使用 shell 与常规工具，再退化为同一上下文的手工步骤。能力不可用时明确披露限制；不得伪造来源、独立复核或实验结果。
 
 ## Related skills
 
 兄弟 Skill 可用时委托其职责；不可用时在本 Skill 内执行必要协议，不因缺失而中止。研究状态布局和生命周期以 `research-manager` 为准。
+
+## Literature evidence contract
+
+文献交接契约见 `references/literature-contract.md`；research-progress 不自行搜索，缺少 anchor、全文深度、coverage gate 或 counter-query 时不得宣布 gap。

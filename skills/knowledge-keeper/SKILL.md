@@ -1,7 +1,6 @@
 ---
 name: knowledge-keeper
-description: >-
-  Knowledge-base retrieval, citation-graph expansion, and capture for papers and external sources. Load when the user asks to search literature, look up a paper, summarize a paper into the knowledge base, or reuse previously found references. Enforces local-first retrieval, forward citation chasing from key papers, a query log, and mandatory capture. Judging whether a literature gap is real or a direction is worth doing belongs to research-progress.
+description: Literature retrieval, local-PDF ingestion, citation expansion, verification, paper notes and corpus reviews. Owns all literature search and synthesis; research-progress consumes its evidence.
 ---
 
 ## Output Contract
@@ -9,145 +8,64 @@ description: >-
 - 先说结论，再给必要依据和下一步。
 - 默认短句和常用词；术语只在更准确时用，首次出现直接解释。
 - 内部状态、流程和检查表默认不展示；只有影响决定或用户明确要求时才展开。
-- 外部事实、论文结论和数字附来源；不确定的直接写"尚未验证"或"我推测"，不给每句话机械加事实/猜测标签。
-- 一段能说清就不用表格；独立要点用列表；只有横向比较才用表格。
-- 不写套话、廉价肯定、重复总结和固定收尾。
+- 外部事实、论文结论和数字附来源；不确定的直接写“尚未验证”或“我推测”。
+- 一段能说清就不用表格；不写套话、廉价肯定、重复总结和固定收尾。
 
-# Knowledge Keeper — 只查一次，查到就存
+## Ownership and invariants
 
-知识库在项目 `.research/knowledge/papers/`。存在理由：同一次检索不许花第二遍钱。
+- `.research/knowledge/papers/` 保存一篇论文一份永久知识；`reviews/` 保存围绕 Research Question 的综合；`pdfs/` 仅为可选原始缓存。不要新建 deep-research skill。
+- 用户显式提供/上传 PDF 默认 `origin: user-upload`、`priority: anchor`；先处理再外搜。Anchor 决定注意力和 search seed，不决定可信度。
+- 不移动用户文件；记录 `local-pdf`、`sha256`（可用时），同 hash 去重。写文件前遵循宿主授权策略。
+- 任何用到的论文必须 capture；不要把临时问题写进 paper-centric note。
 
-## 1. 先查本地
+## Mode selection
 
-调任何 API 或网页之前：
+- **lookup**：local → exact retrieval → verification → 阅读 → capture，适合单篇查询/总结。
+- **scan**：local anchors → retrieval brief → keywords/seeds → references + cited-by → direct competitors/implementation facts → capture，适合 related work。
+- **survey**：冻结 RQ → 读取 anchors → multi-perspective search → query/citation expansion → corpus → blind-spot/coverage gate → verification、extraction、taxonomy、冲突分析、adversarial pass → review artifact。不要把两篇查询升级为 survey。
 
-1. 在 `.research/knowledge/papers/` 的笔记里 grep 这个主题。
-2. 查 `knowledge/papers/00-query-log.md` 有没有类似的过往检索。
+## 主流程
 
-本地命中就直接用缓存笔记回答，并说明来源是本地知识库，不再调 API。
+1. **本地优先**：先处理本轮用户显式提供的 PDF、论文名、DOI 或 URL；再查 `.research/knowledge/papers/`、已有 `local-pdf`、`knowledge/pdfs` 与 `papers/00-query-log.md`。仅当当前模式所需证据未被本地材料充分覆盖时才外部检索（lookup、scan、survey 标准不同）。
+2. 建立 Retrieval Brief（`references/search-strategy.md`），每个 query 映射 RQ；默认 mainstream、competing、critical、adjacent、survey/benchmark 视角，至少一个 anchor-independent。
+3. 用户显式给出的论文名、DOI、arXiv、URL 或 PDF 优先解析为 seed；要求重点参照或上传的 PDF 另标为 anchor（anchor ⊆ seeds，seed 不一定是 anchor）。已有可靠 seed 时不先做宽泛关键词摸索。多 seed 检索；每个 seed 同时扩展 `reference-of` 与 `cited-by`，保留 discovery path。关键词至少迭代一轮。
+4. 按 `references/citation-verification.md` 分离书目验证与阅读深度。直接工作尽量达到 `full`/`code`，并用 `impl-facts-template.md` 记录实现事实。
+5. 对核心 claim 运行 `self-adversarial.md`；synthesis 前执行 `coverage-gates.md`，不通过则 targeted supplementary search。
+6. 按 `synthesis-framework.md` 做 taxonomy、evidence graph（supports/challenges/extends/replicates/contradicts）与条件化冲突分析；产出 `reviews/<topic-slug>.md`（模板见 `review-template.md`）。
 
-## 2. 检索日志
+## Paper note schema（最小字段）
 
-`knowledge/papers/00-query-log.md` 记录每一次外部检索：
-
-| 日期 | 查询词 / 种子论文 | 发现路径 | 来源 | 命中数 | 新建笔记 |
-|---|---|---|---|---|---|
-
-- 同一查询词、同一引用遍历（同种子、同方向、同来源）**7 天内**（可调）不许重跑；复用日志里的结果并说明原检索日期。
-- 每次外部检索都更新日志，包括什么都没查到的——空结果同样值得缓存。
-
-## 3. 入口：关键词只是起点
-
-关键词检索漏掉关键论文是常态，不是意外。三条纪律：
-
-1. **种子优先**。开始前先问用户手里有没有已知的关键论文——有就直接当种子，跳过关键词摸索，直接进 §4 的引用网扩展。用户常常一下子就能指出那篇论文，关键词检索半天摸不到。
-2. **关键词是迭代品**。首轮命中后，从命中论文的标题和摘要里收这个领域的真实术语，换词再查至少一轮。一份没换过查询词的检索报告，视为片面。
-3. **按基准/榜单查时**，关键词只是入口——很多评测过某基准的工作从不在标题摘要里提它（已验证的漏检：Spatial-MLLM，arXiv 2505.23747）。这时把基准自己的论文当种子走 §4，再交叉核对官方榜单/模型库，再补至少一个相邻宽查询和一个上位概念查询。
-
-## 4. 顺着引用网扩
-
-对每篇关键论文（参照工作、强的直接竞争、领域定义性工作），两个方向都要查：
-
-1. **往回**：翻它的参考文献，捞出奠基工作、先前表述和实验标准。
-2. **往前**：查引用了它的论文。这是强制的——后来的直接竞争者、修正、复现、改进往往完全不共用原来的关键词。
-
-前向检索的步骤：
-
-1. 把种子论文解析成稳定 ID（DOI、arXiv ID、Semantic Scholar 或 OpenAlex ID），不许只靠标题匹配。
-2. 用 Semantic Scholar 或 OpenAlex 这类支持引用关系的源拉取引用它的论文。日志里记：种子、方向（`cited-by`）、来源、日期、结果数。
-3. **筛选时最优先"改进型"后继**：在 intro 里点名批评或扩展种子的工作（"X et al. … however …"）——它们几乎必然引用了种子，但关键词往往完全不同，这正是关键词检索漏掉关键论文的主要原因。其余按题摘筛：直接复用问题或设定的、独立评测或复现的、矛盾或修正的、能带出新分支的综述。引用数本身不是相关性信号。
-4. 先按直接程度排，再看证据价值和时间新旧。定义了标准的经典老论文要留；不许只返回高引或只返回新工作。
-5. 对每个强候选，能拿到全文就看它在哪、为什么引用种子——参考文献列表里出现一次不构成实质依赖。
-6. 只在候选变成新种子、或揭出一个不同的相关分支时，才再往前扩一跳。某一跳没有新的直接工作、只有重复或背景文献时停。
-
-报告里不许混淆两个方向：**参考文献**是种子引用的工作；**引用它的论文**是后来的工作。返回的候选要带来源角色和发现路径，如 `关键词 → 种子 → cited-by → 候选`，不许给一堆扁平的 N 篇列表。
-
-## 5. 用到就必存
-
-任何实际用到的论文（在回答或文档里引了）必须立刻存成 `knowledge/papers/作者-年份-标题.md`。去重按 arXiv ID 或 DOI；两个都没有就按规范化标题 + 一作 + 年份；还不确定就两份都留并互链，直到查清。笔记已存在就更新，不许建副本。只检索不落库是被禁止的——重复检索和 API 封号都是这么来的。
-
-笔记模板——以论文为中心，不以当前问题为中心：
-
-```
-# 标题 — 作者 (年份)
-link: <url 或 arXiv ID>   pdf: <pdfs/... 或 "not cached">
-added: <YYYY-MM-DD>   source-query: "<找到它的那次查询>"
-discovered-via: <关键词 | reference-of:<论文id> | cited-by:<论文id>>
-publication: <会议/期刊/预印本>   review-status: published | preprint | unknown
+```yaml
+origin: user-upload | external-search | existing-library
+priority: anchor | normal
+local-pdf: <path | none>
+sha256: <hash | unknown>
+bibliographic-id: {arxiv: <id>, doi: <id>}
+verification: local-file | verified | partial | unverifiable
 assessment-depth: metadata | abstract | full | code | reproduced
-quality: strong | usable | weak | unassessed   quality-updated: <YYYY-MM-DD>
-
-## 结论
-一句话：值不值得当参照工作跟进，为什么。
-带上最有价值的一点和最大的问题。
-
-## 摘要
-论文本身做了什么：问题、方法、核心结论、证据强度。
-3-5 句，独立于任何使用场景。
-
-## 关键细节
-- 方法要点 / 数据集 / 主要数字结果 / 实验设置，每条一行。
-- 标准：带着*不同*问题的后来读者几乎不需要再去取原文。
-
-## 外部信号
-会议等级、作者在这个具体问题上的履历、被采用情况（带查询日期）。
-只作辅助；永远压不过全文阅读。
-
-## 局限
-- 弱点和未验证的声明。推测标 [speculation]。
-
-## 相关记录
-- <YYYY-MM-DD>  <方向/提案>：角色（参照 | 竞争 | 相邻 | 背景）+ 怎么用的
 ```
 
-规则：
+继续保留 `quality`、`role`、`discovered-via`、`source-query`、`publication`、`review-status`。Paper note 的正文结构和内容质量由 `references/paper-note-template.md` 定义；metadata 不能替代论文结论、方法/数据/实验关键细节、局限和项目相关记录。Anchor 原因追加到“相关记录”。`priority of attention != strength of evidence`。
 
-- **摘要和关键细节描述的是论文，不是当前的问题。** 只为今天的问题写的笔记，换个问题就得重新检索——那知识库就白建了。
-- 相关记录只追加：已有笔记服务新方向时加一行，绝不建重复笔记。
-- 不许照抄摘要原文，用自己的话写。
+## Indexing
 
-## 6. 论文质量判断
+`papers/` 超过 5 篇后维护 `00-overview.md`，每篇记录 citation/title、priority、role、quality、assessment-depth、要点和关联方向；`reviews/` 超过 5 篇同样维护 overview（RQ、scope、更新时间、judgment）。
 
-检索不是列相关清单。方向实际依赖的每篇论文都要有逐篇判断：角色、质量、阅读深度（笔记头三个字段）。按 `paper-quality.md` 的三层判：真实相关性、内在可靠性（洞见、证据、理论），外部信号（会议等级、作者履历、被采用情况）只作辅助。
+## Cache and handoff
 
-规则：
+维护 `papers/00-query-log.md`（默认 7 天；latest/recent 刷新，fast-moving 增量，citation graph 拉取新结果），字段含 RQ、perspective、query、seed、discovery path、source、date、result count、new notes、cache status。向 `research-progress` 交付 anchors、RQ、direct competitors、验证/深度、coverage gate 与 counter-query 状态；不自行判断 gap。
 
-- 深度限制说法：只读了摘要最多说"值得读"，不许说"实验扎实"。
-- 会议和名作者救不了弱证据；无名作者和预印本也不等于弱工作。
-- 质量判断可更新：改动时记 `quality-updated` 和原因。
-- 做或改这类判断时加载 `paper-quality.md`。
+## Capability
 
-## 7. 索引
+按宿主能力阶梯选择 PDF 读取：原生 reader/附件 → `pdftotext` → Python parser → metadata fallback。任何 fallback 必须更新 assessment-depth 和 parse-status；保持平台无关，不写 Codex/Claude/Kilo 专属调用。
 
-`knowledge/papers/` 超过五篇笔记后，建或更新 `00-overview.md`（按 `research-manager` §4）。索引每篇一行：引用、质量字段、一句话要点、关联方向。
+## References
 
-## 8. 对直接相关工作要挖到实现层
-
-对方向最近的直接工作（`research-progress`"别人做到了哪"一步的消费对象），检索必须越过摘要级说法，尽量拿实现级事实：
-
-- 实际的输入/输出、数据集、标签需求、训练目标、推理路径。
-- 核心模块在开源代码里实际长什么样；论文和代码是否一致；头条数字背后的算力。
-- 作者自己报告的失败消融、负结果、局限。
-- 代码是否可用、什么协议；需要的中间信号是否暴露。
-
-深度限制说法：`abstract` 深度只够说"值得读"；可行性和空白判断需要 `full` 或 `code` 深度。每篇的阅读深度记在笔记头，并随检索结果一并报回。这些事实的采集模板（含明确的缺口记录）：`references/impl-facts-template.md`。
-
-## 9. 边界
-
-- `knowledge-keeper` 管检索、落库、索引、单篇质量判断。不判断文献空白是否成立、方向值不值得做——那是 `research-progress` 的事。
-- 元数据/搜索实际调 arXiv，引用遍历实际调 Semantic Scholar 或 OpenAlex；绝不编造论文、引用关系或引用内容。
-- 失败要暴露，不要编造得像：API 限流或报错时，验证响应的形状（不只看状态码），报告哪个查询失败了，受影响的结果标未验证——绝不用编的或凭记忆的结果填坑。
-- 写文件前先经用户确认。
-
-
-## Capability check
-
-文献检索能力阶梯：
-1. 学术文献搜索；2. 限定学术来源的通用搜索；3. shell 调用公开学术 API；4. 仅使用用户提供材料的 closed-book 模式。没有检索能力时明确写“未检索”，绝不凭记忆补论文。
-
-
-按宿主当前能力选择最佳执行路径：优先使用原生文件/搜索/绘图或独立上下文能力，其次使用 shell 与常规工具，再退化为同一上下文的手工步骤。能力不可用时明确披露限制；不得伪造来源、独立复核或实验结果。
-
-## Related skills
-
-兄弟 Skill 可用时委托其职责；不可用时在本 Skill 内执行必要协议，不因缺失而中止。研究状态布局和生命周期以 `research-manager` 为准。
+- `references/local-paper-ingestion.md`
+- `references/search-strategy.md`
+- `references/citation-verification.md`
+- `references/coverage-gates.md`
+- `references/self-adversarial.md`
+- `references/synthesis-framework.md`
+- `references/review-template.md`
+- `references/paper-note-template.md`、`references/impl-facts-template.md`、`paper-quality.md`

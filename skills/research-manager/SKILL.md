@@ -136,3 +136,15 @@ description: >-
 ## Related skills
 
 兄弟 Skill 可用时委托其职责；不可用时在本 Skill 内执行必要协议，不因缺失而中止。研究状态布局和生命周期以 `research-manager` 为准。
+## Literature ownership
+
+`.research/knowledge/` 正式结构为：
+
+```
+knowledge/
+├── papers/   # knowledge-keeper：一篇论文一份永久记录
+├── reviews/  # knowledge-keeper：按 Research Question 的 corpus synthesis
+└── pdfs/     # research-manager 定义生命周期；原始外部资产，可选缓存
+```
+
+PDF 是原始外部资产，paper note 是可持续知识，review 是问题级派生判断。冲突时遵循：PDF/source text > paper note > review synthesis；review 不覆盖原始证据。PDF 默认不入 Git，除非用户明确要求缓存。
