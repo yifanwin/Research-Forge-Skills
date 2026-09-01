@@ -12,6 +12,16 @@ description: >-
 - 不写套话、廉价肯定、重复总结和固定收尾。
 # Research Progress — 先落地现实，再决定验证什么
 先查清现实，再决定什么值得验证。内部顺序为：核心主张与贡献形态 → 实际价值 → related-work reality → hard gate → implementation closure → contribution shaping → reframing probe → guess register → cheapest decision evidence。默认输出保持简洁。详细规则见 `references/idea-gates.md` 与 `references/contribution-shaping.md`。不许从抽象概念直接跳到实验设计。
+## 0. 轻量 Idea Intake / State Recovery（内部前置）
+
+- **短输入直通**：一句话 Idea、单个研究问题或“值不值得做”等输入，直接进入 §1，保持原有提问和输出风格；不要求用户填写 Intake。
+- **混杂输入才恢复**：当一条消息同时含有笔记、结论、数字、方法草案或多轮决定时，先在内部从原文恢复状态，再从对应阶段继续；不把恢复结果默认渲染成表格。
+- **状态槽位**：分别摘录并区分：`已验证证据`（可追溯运行/产物/来源）、`待核实外部事实`（论文结论/数字但来源不明）、`用户观察`、`核心假设`、`方法候选`、`scope/约束`、`已做决定`、`未决问题/blocker`、`暂存想法`。方法候选不能直接成为贡献；先恢复 problem、claim、hypothesis，再判断方法角色。
+- **证据门槛**：无法确认来源的论文结论和数字一律留在“待核实外部事实”，不得升级为 evidence；文献核实仍交给 `knowledge-keeper`。
+- **重建四元组与阶段**：基于槽位重新确定当前 `problem`、`claim`、最大不确定性及阶段（否决/卡住/评估中/通过）。已明确内容直接复用；只有缺口或最高优先级不确定性才提问或推进，不从头重跑。
+- **冲突不静默合并**：重复、过时或相互矛盾的判断保留来源/时间线，采用当前有依据的结论继续，并显式标记 `【冲突】` 或 `【过时判断】`；无法判定时记为 `【未决分歧】`，交由用户或证据解决。
+- **职责边界**：恢复的是本 Skill 的研究状态，不替代 `research-manager` 的文件生命周期、`knowledge-keeper` 的检索核实或 `experiment-manager` 的实验执行。
+
 ## 1. 先分清大小问题
 
 - **小问题**：现有知识或一次查证就能答，最多影响一个局部决定（用哪个工具、哪个参数、这篇论文讲了什么）→ 直接答，不启动下面的流程。
